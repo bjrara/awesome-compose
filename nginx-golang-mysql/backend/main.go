@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -42,7 +46,55 @@ func blogHandler(w http.ResponseWriter, r *http.Request) {
 		err = rows.Scan(&title)
 		titles = append(titles, title)
 	}
+
 	json.NewEncoder(w).Encode(titles)
+}
+
+func awsHandler(w http.ResponseWriter, r *http.Request) {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-west-2"))
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+
+	// Using the Config value, create the DynamoDB client
+	svc := dynamodb.NewFromConfig(cfg)
+
+	// Build the request with its input parameters
+	resp, err := svc.ListTables(context.TODO(), &dynamodb.ListTablesInput{
+		Limit: aws.Int32(5),
+	})
+	if err != nil {
+		log.Fatalf("failed to list tables, %v", err)
+	}
+
+	var tables []string
+	for _, tableName := range resp.TableNames {
+		tables = append(tables, tableName)
+	}
+
+	json.NewEncoder(w).Encode(tables)
+}
+
+func remoteHandler(w http.ResponseWriter, r *http.Request) {
+	serviceName := os.Getenv("REMOTE_SERVICE")
+	if serviceName == "" {
+		log.Fatalf("remmote service undefined.")
+	}
+
+	url := fmt.Sprintf("http://%s/remote", serviceName)
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatalf("Error making request: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading response: %v\n", err)
+	}
+
+	json.NewEncoder(w).Encode(body)
 }
 
 func main() {
@@ -53,7 +105,9 @@ func main() {
 
 	log.Print("Listening 8000")
 	r := mux.NewRouter()
-	r.HandleFunc("/", blogHandler)
+	r.HandleFunc("/blog", blogHandler)
+	r.HandleFunc("/aws", awsHandler)
+	r.HandleFunc("/remote", remoteHandler)
 	log.Fatal(http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, r)))
 }
 

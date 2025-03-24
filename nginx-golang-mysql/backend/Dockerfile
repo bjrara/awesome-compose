@@ -5,7 +5,13 @@ WORKDIR /code
 
 ENV CGO_ENABLED 0
 ENV GOPATH /go
+ENV GOPROXY direct
 ENV GOCACHE /go-build
+
+RUN <<EOF
+apk update
+apk add git
+EOF
 
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod/cache \
