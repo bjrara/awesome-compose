@@ -1,0 +1,33 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: adot
+  namespace: default
+spec:
+  mode: deployment
+  image: public.ecr.aws/aws-observability/aws-otel-collector:latest
+  managementState: managed
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    processors:
+      batch:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 400
+        spike_limit_mib: 150
+
+    exporters:
+      awsxray:
+        region: us-west-2
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [awsxray]
