@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -108,6 +109,13 @@ func main() {
 	r.HandleFunc("/blog", blogHandler)
 	r.HandleFunc("/aws", awsHandler)
 	r.HandleFunc("/remote", remoteHandler)
+
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		panic("configuration error, " + err.Error())
+	}
+	// instrument all aws clients
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
 	log.Fatal(http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, r)))
 }
 
