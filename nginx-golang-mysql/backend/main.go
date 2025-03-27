@@ -56,7 +56,8 @@ func awsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("unable to load SDK config, %v", err)
 	}
-
+	// instrument all aws clients
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
 	// Using the Config value, create the DynamoDB client
 	svc := dynamodb.NewFromConfig(cfg)
 
@@ -110,12 +111,6 @@ func main() {
 	r.HandleFunc("/aws", awsHandler)
 	r.HandleFunc("/remote", remoteHandler)
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		panic("configuration error, " + err.Error())
-	}
-	// instrument all aws clients
-	otelaws.AppendMiddlewares(&cfg.APIOptions)
 	log.Fatal(http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, r)))
 }
 
