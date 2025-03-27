@@ -2,8 +2,6 @@ module github.com/docker/awesome-compose/nginx-golang-mysql/backend
 
 go 1.22
 
-toolchain go1.23.6
-
 require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/handlers v1.5.1

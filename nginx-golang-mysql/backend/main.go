@@ -53,7 +53,7 @@ func blogHandler(w http.ResponseWriter, r *http.Request) {
 func awsHandler(w http.ResponseWriter, r *http.Request) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-west-2"))
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		log.Printf("unable to load SDK config, %v", err)
 	}
 
 	// Using the Config value, create the DynamoDB client
@@ -64,7 +64,7 @@ func awsHandler(w http.ResponseWriter, r *http.Request) {
 		Limit: aws.Int32(5),
 	})
 	if err != nil {
-		log.Fatalf("failed to list tables, %v", err)
+		log.Printf("failed to list tables, %v", err)
 	}
 
 	var tables []string
@@ -78,20 +78,20 @@ func awsHandler(w http.ResponseWriter, r *http.Request) {
 func remoteHandler(w http.ResponseWriter, r *http.Request) {
 	serviceName := os.Getenv("REMOTE_SERVICE")
 	if serviceName == "" {
-		log.Fatalf("remmote service undefined.")
+		log.Printf("remmote service undefined.")
 	}
 
-	url := fmt.Sprintf("http://%s/remote", serviceName)
+	url := fmt.Sprintf("http://%s/aws", serviceName)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalf("Error making request: %v\n", err)
+		log.Printf("Error making request: %v\n", err)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Error reading response: %v\n", err)
+		log.Printf("Error reading response: %v\n", err)
 	}
 
 	json.NewEncoder(w).Encode(body)
