@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -52,7 +51,7 @@ func blogHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func awsHandler(w http.ResponseWriter, r *http.Request) {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-west-2"))
+	cfg, err := config.LoadDefaultConfig(r.Context(), config.WithRegion("us-west-2"))
 	if err != nil {
 		log.Printf("unable to load SDK config, %v", err)
 	}
@@ -62,7 +61,7 @@ func awsHandler(w http.ResponseWriter, r *http.Request) {
 	svc := dynamodb.NewFromConfig(cfg)
 
 	// Build the request with its input parameters
-	resp, err := svc.ListTables(context.TODO(), &dynamodb.ListTablesInput{
+	resp, err := svc.ListTables(r.Context(), &dynamodb.ListTablesInput{
 		Limit: aws.Int32(5),
 	})
 	if err != nil {
